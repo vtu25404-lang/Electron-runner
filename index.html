@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Electron Runner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --glow-color: rgba(0, 255, 255, 0.7);
+      }
+
+      body {
+        background-color: #0c0a1a;
+        color: #e0e0e0;
+        font-family: 'Orbitron', sans-serif;
+        overflow: hidden;
+      }
+      
+      .game-container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        perspective: 800px;
+        overflow: hidden;
+        background-color: #0c0a1a; /* Base color */
+      }
+      
+      /* Animated Space Background */
+      @keyframes move-background {
+        from { background-position: 0 0; }
+        to { background-position: -10000px 5000px; }
+      }
+      .game-container::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: -1;
+        background-image: 
+          radial-gradient(ellipse at 20% 80%, rgba(29, 78, 216, 0.2) 0%, transparent 70%),
+          radial-gradient(ellipse at 80% 30%, rgba(107, 33, 168, 0.2) 0%, transparent 70%),
+          radial-gradient(circle at 15% 25%, rgba(200, 200, 255, 0.2) 1px, transparent 2px),
+          radial-gradient(circle at 85% 45%, rgba(200, 200, 255, 0.2) 1px, transparent 2px),
+          radial-gradient(circle at 40% 95%, rgba(200, 200, 255, 0.3) 2px, transparent 3px);
+        background-repeat: no-repeat, no-repeat, repeat, repeat, repeat;
+        background-size: 800px 800px, 1200px 1200px, 50px 50px, 70px 70px, 60px 60px;
+        background-position: center center;
+        animation: move-background 200s linear infinite;
+      }
+      
+      /* Animated Floor Grid */
+      @keyframes move-grid {
+        from { background-position-y: 0; }
+        to { background-position-y: -200px; }
+      }
+      .grid-floor {
+        width: 150%;
+        height: 150%;
+        position: absolute;
+        bottom: 0;
+        left: -25%;
+        transform-origin: 50% 100%;
+        transform: rotateX(75deg);
+        background:
+          repeating-linear-gradient(
+            90deg,
+            transparent, transparent 49px,
+            var(--glow-color) 50px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            transparent, transparent 99px,
+            rgba(0, 255, 255, 0.4) 100px
+          );
+        background-size: 50px 100px;
+        animation: move-grid 1.5s linear infinite;
+      }
+      
+      /* Animated Side Walls */
+       @keyframes data-stream {
+        from { background-position: 0 0; }
+        to { background-position: 0 -400px; }
+      }
+      .side-wall {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 50vw;
+        background: 
+          linear-gradient(110deg, transparent 70%, rgba(0, 255, 255, 0.1) 75%, transparent 80%),
+          linear-gradient(to bottom, #0f172a, #1e293b);
+        background-size: 100% 100%;
+        position: relative;
+        overflow: hidden;
+      }
+      .side-wall::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-image: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 40px,
+          rgba(0, 255, 255, 0.05) 42px,
+          rgba(0, 255, 255, 0.15) 43px,
+          rgba(0, 255, 255, 0.05) 44px,
+          transparent 46px,
+          transparent 100px
+        );
+        background-size: 100% 200px;
+        animation: data-stream 2s linear infinite;
+        opacity: 0.7;
+      }
+      .side-wall.left {
+        left: 0;
+        transform: translateX(-60%) skewY(25deg);
+      }
+      .side-wall.right {
+        right: 0;
+        transform: translateX(60%) skewY(-25deg);
+      }
+      
+      /* Horizon Glow */
+      .horizon-glow {
+        position: absolute;
+        bottom: 40vh;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: rgba(0, 255, 255, 0.5);
+        box-shadow: 0 0 15px 8px rgba(0, 255, 255, 0.5);
+        filter: blur(8px);
+        z-index: 0;
+      }
+
+      /* Atmospheric Particles */
+      @keyframes float-up {
+        0% { transform: translateY(0); opacity: 0; }
+        10%, 90% { opacity: 1; }
+        100% { transform: translateY(-100vh); opacity: 0; }
+      }
+      #particles {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .particle {
+        position: absolute;
+        border-radius: 50%;
+        background: var(--glow-color);
+        box-shadow: 0 0 5px var(--glow-color);
+        animation: float-up infinite linear;
+      }
+      .particle:nth-child(1) { left: 10%; width: 3px; height: 3px; animation-duration: 12s; animation-delay: -2s; }
+      .particle:nth-child(2) { left: 85%; width: 2px; height: 2px; animation-duration: 9s; animation-delay: -5s; }
+      .particle:nth-child(3) { left: 45%; width: 4px; height: 4px; animation-duration: 15s; animation-delay: 0s; }
+      .particle:nth-child(4) { left: 22%; width: 2px; height: 2px; animation-duration: 8s; animation-delay: -7s; }
+      .particle:nth-child(5) { left: 70%; width: 3px; height: 3px; animation-duration: 11s; animation-delay: -4s; }
+      .particle:nth-child(6) { left: 95%; width: 2px; height: 2px; animation-duration: 13s; animation-delay: -1s; }
+
+
+      .cloud-shape {
+        -webkit-mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><path d="M 195,80 A 50 50 0 0 1 125,120 L 75,120 A 40 40 0 0 1 25,70 A 45 45 0 0 1 90,20 A 60 60 0 0 1 170,50 A 50 50 0 0 1 195,80 Z"/></svg>');
+        mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg"><path d="M 195,80 A 50 50 0 0 1 125,120 L 75,120 A 40 40 0 0 1 25,70 A 45 45 0 0 1 90,20 A 60 60 0 0 1 170,50 A 50 50 0 0 1 195,80 Z"/></svg>');
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-position: center;
+        mask-position: center;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+      }
+
+      /* 3D Obstacle styles */
+      .obstacle-wrapper {
+          transform-style: preserve-3d;
+          perspective: 400px;
+      }
+      .obstacle-content {
+          box-shadow: inset 0px 5px 15px rgba(0, 0, 0, 0.4), 0px 10px 20px rgba(0, 0, 0, 0.3);
+          transform: rotateX(10deg) translateZ(5px);
+          transition: transform 0.2s ease-out;
+      }
+      .obstacle-wrapper:hover .obstacle-content {
+          transform: rotateX(0deg) translateZ(15px) scale(1.05);
+      }
+      .obstacle-symbol {
+          transform: translateZ(20px);
+          filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.7));
+      }
+
+      /* Power Station styles */
+      .power-station {
+          position: absolute;
+          left: 50%;
+          width: 300px;
+          height: 150px;
+          transition: transform 0.1s linear, opacity 0.5s;
+          filter: drop-shadow(0 0 20px var(--glow-color));
+      }
+      .station-base {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 30px;
+          background: linear-gradient(to top, #2d3748, #4a5568);
+          border-top: 2px solid #718096;
+      }
+      .station-tower {
+          position: absolute;
+          bottom: 30px;
+          width: 40px;
+          background: linear-gradient(to top, #4a5568, #a0aec0);
+          border: 1px solid #718096;
+      }
+      .tower-left { left: 40px; height: 80px; }
+      .tower-center { left: 130px; height: 120px; }
+      .tower-right { right: 40px; height: 80px; }
+      .station-light {
+          position: absolute;
+          top: -10px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 20px;
+          height: 20px;
+          background-color: #f56565;
+          border-radius: 50%;
+          box-shadow: 0 0 15px #f56565;
+          animation: blink 1.5s infinite;
+      }
+      @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+      }
+      
+      .glowing-text {
+        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #007bff, 0 0 20px #007bff, 0 0 25px #007bff, 0 0 30px #007bff, 0 0 35px #007bff;
+      }
+      .neon-border {
+        box-shadow: 0 0 5px rgba(0, 191, 255, 0.8), 0 0 10px rgba(0, 191, 255, 0.6), 0 0 15px rgba(0, 191, 255, 0.4), inset 0 0 5px rgba(0, 191, 255, 0.6);
+      }
+      .flash-red {
+        animation: flash-red-animation 0.3s ease-out;
+      }
+      @keyframes flash-red-animation {
+        0% { box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.7); }
+        100% { box-shadow: 0 0 0 0 transparent; }
+      }
+      .glow-green {
+        animation: glow-green-animation 0.5s ease-out;
+      }
+      @keyframes glow-green-animation {
+        0% { box-shadow: 0 0 20px 10px rgba(0, 255, 0, 0.6); }
+        100% { box-shadow: 0 0 0 0 transparent; }
+      }
+      .battery-cell {
+        background-color: #444;
+        border: 1px solid #888;
+        transition: background-color 0.5s;
+      }
+      .battery-cell.full { background-color: #22c55e; }
+      .battery-cell.medium { background-color: #f59e0b; }
+      .battery-cell.low { background-color: #ef4444; }
+
+      @keyframes player-run {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+        100% { transform: translateY(0); }
+      }
+      
+      .player-running {
+        animation: player-run 0.4s linear infinite;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <div id="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "name": "Electron Runner",
+  "description": "An endless runner-style educational game about electrical materials. Control an electron, collect conductors and semiconductors to maintain energy, and avoid insulators to safely transport electricity.",
+  "requestFramePermissions": []
+}
